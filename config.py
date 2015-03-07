@@ -11,7 +11,8 @@ The structure of the config.json file should look like this...
     "form_entry_name": "<post variable name for name>",
     "form_entry_phone" : "<post variable name for phone number>",
     "super_phone" : "<admin phone number>",
-    "super_word" : "<admin secret phrase>"
+    "super_word" : "<admin secret phrase>",
+    "salt": <salt string for hashes>
 }
 """
 
@@ -32,6 +33,7 @@ super_word = None
 form_url = None
 form_entry_name = None
 form_entry_phone = None
+salt = None
 
 if "form_url" in config and \
     "form_entry_name" in config and \
@@ -57,3 +59,8 @@ else:
     print "config.json missing some values or not created?"
     port = 8080
     host = "127.0.0.1"
+
+if "salt" in config:
+    salt = config["salt"]
+else:
+    salt = "defaultsalt"

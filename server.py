@@ -6,11 +6,15 @@ import form
 import database
 import config
 
-salt = hashlib.md5("asdasd").hexdigest()
+salt = hashlib.md5(config.salt).hexdigest()
 
 # TODO Consolidate hashing methods into separate module
 def salty(mentor):
     return hashlib.md5(mentor + salt).hexdigest()
+
+def unsalt(mentor_hash):
+    # Look for the mentor's salt
+    return filter(lambda x: salty(x) == mentor_hash, list(mentors))[0]
 
 def getDayHash():
     return salty(str(datetime.date.today().month) + "/" + str(datetime.date.today().day))
@@ -43,6 +47,7 @@ class PhoneServer(object):
 
         if "From" not in params or "Body" not in params:
             return "err"
+        sender = params["From"]
         number = hash(params["From"])
         body = params["Body"]
         print "RECIEVED",number,body
@@ -56,7 +61,12 @@ class PhoneServer(object):
             # Correct day code
 
             # Check if users number is in the database
-            user = database.getNameFromPhone(number)
+            user = None
+            if "@" in sender:
+                form.send(sender, sender)
+                return twilioResponse("Thanks " + sender +"! Your attendance has been recorded!")
+            else:
+                user = database.getNameFromPhone(number)
             if user is not None:
 
                 # User is in database
@@ -89,6 +99,13 @@ class PhoneServer(object):
                 print "Received incorrect day code", number, ":", body
                 return twilioResponse("Incorrect Day Code!")
     phone.exposed = True
+
+    def slack(self, **params):
+        if params["channel_id"] == "G033ULLLB":
+            return getDayHash()[:4]
+        else:
+            return self.phone(From="@" + params["user_name"], Body=params["text"]).split("<Message>")[1].split("</Message>")[0]
+    slack.exposed = True
 
 database.initTables()
 cherrypy.config.update({
