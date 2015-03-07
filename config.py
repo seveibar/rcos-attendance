@@ -64,3 +64,8 @@ if "salt" in config:
     salt = config["salt"]
 else:
     salt = "defaultsalt"
+
+if "slack_get_users_api" in config:
+    slack_get_users_api = config["slack_get_users_api"]
+else:
+    slack_get_users_api = ""

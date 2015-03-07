@@ -5,6 +5,7 @@ import datetime
 import form
 import database
 import config
+import slack
 
 salt = hashlib.md5(config.salt).hexdigest()
 
@@ -101,10 +102,21 @@ class PhoneServer(object):
     phone.exposed = True
 
     def slack(self, **params):
-        if params["channel_id"] == "G033ULLLB":
+        if slack.isOutdated():
+            slack.loadUserDictionary()
+        if params["channel_id"] == "G033ULLLB" and ("text" not in params or params["text"] == ""): #mentors channel
             return getDayHash()[:4]
         else:
-            return self.phone(From="@" + params["user_name"], Body=params["text"]).split("<Message>")[1].split("</Message>")[0]
+            username = params["user_name"]
+            day_code = params["text"].lower()
+
+            if day_code == getDayHash()[:4].lower():
+                if username in slack.users and slack.users[username]["fullname"] != "":
+                    return "Thanks " + slack.users[username]["fullname"]+"! Your attendance has been recorded!"
+                else:
+                    return "Thanks @" + username + "! Your attendance has been recorded, please enter your full name in slack!"
+            else:
+                return "Incorrect Day Code!"
     slack.exposed = True
 
 database.initTables()
